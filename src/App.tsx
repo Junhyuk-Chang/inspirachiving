@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
+import type { User } from "@supabase/supabase-js";
 import type { Item } from "./types";
+import { supabase } from "./lib/supabase";
 import { classifyItem, extractImageColors } from "./lib/classifier";
 import { saveItem, getAllItems, deleteItem } from "./lib/storage";
+import { uploadImage } from "./lib/imageUpload";
 import PasteZone from "./components/PasteZone";
 import ItemCard from "./components/ItemCard";
 import FilterBar from "./components/FilterBar";
 import AttributeGraph from "./components/AttributeGraph";
+import Auth from "./components/Auth";
 import "./App.css";
 
 type View = "grid" | "graph";
@@ -15,6 +19,8 @@ function genId() {
 }
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -22,26 +28,46 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // 인증 상태 감지
   useEffect(() => {
-    getAllItems().then(setItems);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthReady(true);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
+
+  // 로그인 후 아이템 불러오기
+  useEffect(() => {
+    if (user) getAllItems().then(setItems);
+    else setItems([]);
+  }, [user]);
 
   const addItem = useCallback(async (partial: Omit<Item, "id" | "attributes" | "createdAt">) => {
     setLoading(true);
     try {
+      const id = genId();
       const attributes = await classifyItem(partial.type, partial.content);
 
+      let content = partial.content;
+
       if (partial.type === "image") {
-        const { palette, brightness } = await extractImageColors(partial.content);
+        // dataURL → Supabase Storage 업로드
+        const { palette, brightness } = await extractImageColors(content);
         for (const color of palette) {
           attributes.push({ key: "color", value: color, label: `🎨 ${color}` });
         }
         attributes.push({ key: "brightness", value: brightness, label: `💡 ${brightness}` });
+        content = await uploadImage(content, id);
       }
 
       const item: Item = {
-        id: genId(),
+        id,
         ...partial,
+        content,
         attributes,
         createdAt: new Date().toISOString(),
       };
@@ -103,17 +129,30 @@ export default function App() {
     return true;
   });
 
+  // 인증 준비 전 로딩
+  if (!authReady) {
+    return <div className="auth-loading">...</div>;
+  }
+
+  // 비로그인 → 로그인 화면
+  if (!user) {
+    return <Auth user={null} />;
+  }
+
   return (
     <div className="app">
       <header className="header">
         <h1 className="logo">inspirachiving</h1>
-        <div className="view-toggle">
-          <button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")}>
-            ▦ 그리드
-          </button>
-          <button className={view === "graph" ? "active" : ""} onClick={() => setView("graph")}>
-            ◎ 그래프
-          </button>
+        <div className="header-right">
+          <div className="view-toggle">
+            <button className={view === "grid" ? "active" : ""} onClick={() => setView("grid")}>
+              ▦ 그리드
+            </button>
+            <button className={view === "graph" ? "active" : ""} onClick={() => setView("graph")}>
+              ◎ 그래프
+            </button>
+          </div>
+          <Auth user={user} />
         </div>
       </header>
 

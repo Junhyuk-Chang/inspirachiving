@@ -331,6 +331,92 @@ body {
   padding-top: 20px;
 }
 
+/* ── Auth ────────────────────────────────────────────────── */
+.auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: var(--text-muted);
+  font-size: 24px;
+}
+
+.auth-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+}
+
+.auth-desc {
+  color: var(--text-muted);
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.signin-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.signin-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.auth-email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.signout-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.signout-btn:hover {
+  color: #e06c75;
+  border-color: #e06c75;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 /* ── 반응형 ──────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .grid { columns: 1; }
